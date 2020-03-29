@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+
+first_name="${BASH_SOURCE[0]}"
+actual_name="$(readlink -f "${first_name}")"
+local_path="$(dirname "${actual_name}")"
+
+#===================================================================================
+#                                 Imports
+#===================================================================================
+. "${local_path}/logging"
+
+#===================================================================================
+#                                 Functions
+#===================================================================================
+singletons::instance::get_singleton() {
+    echo "${1:?Provide image name}.singleton"
+}
+
+singletons::instance::get_container_instance() {
+    sudo docker ps --filter ancestor="${1:?Provide image name}" --format "{{.ID}}"
+}
+
+singletons::instance::get_container_address() {
+    sudo docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(singletons::instance::get_container_instance ${1})
+}
+
+singletons::instance::get_docker_image() {
+    sudo docker images --format "{{.Repository}}" | grep "^${1:?Provide image name}"'$'
+}
+
+singletons::instance::select_config() {
+    local name
+    local _status=0
+    local repo=
+
+    if ! name="${1:?Must provide an instance name}"
+    then
+        return $?
+    elif ! repo="$(singletons::repo)"
+    then
+        return $?
+    elif ! pushd "${repo}" >/dev/null 2>&1
+    then
+        logging::error "Can't access repo '${repo}'"
+        return $?
+    elif [ -d .git ]
+    then
+        git branch "${name}"
+    else
+        hg branch "${name}"
+    fi
+
+    _status=$?
+    popd >/dev/null 2>&1
+    return ${_status}
+}
+
+singletons::instance::names() {
+    local _repo=
+    local _status=0
+
+    if ! _repo="$(singletons::repo)"
+    then
+        return $?
+    elif ! pushd "${_repo}" >/dev/null 2>&1
+    then
+        logging::error "Can't access repo '${repo}'"
+        return $?
+    elif [ -d .git ]
+    then
+        git branch | awk '{print $NF;}'
+    else
+        hg branches | awk '{print $1;}'
+    fi
+
+    _status=$?
+    popd >/dev/null 2>&1
+    return ${_status}
+}
+
+singletons::instance::build() {
+    local name=${1:?Need instance name}
+    local status=0
+    local image_name="$(echo "${name}" | tr '[A-Z]' '[a-z]')"
+
+    logging::info "Building container image ${image_name}"
+
+    if ! singletons::instance::select_config "${name}"
+    then
+        return $?
+    elif ! pushd "$(singletons::repo)" >/dev/null 2>&1
+    then
+        logging::error "Can't access repo '${repo}'"
+        return $?
+    fi
+
+    singletons::instance::stop "${image_name}"
+
+    if ! nice sudo docker build --tag ${image_name} .
+    then
+        logging::error "Failed building container image ${image_name}"
+        status=77
+    fi
+
+    popd >/dev/null 2>&1
+    return $status
+}
+
+singletons::instance::delete() {
+    local name=${1:?Need instance name}
+    local image_name="$(echo "${name}" | tr '[A-Z]' '[a-z]')"
+    local singleton_name="$(singletons::instance::get_singleton "${image_name}")"
+    local docker_image="$(singletons::instance::get_docker_image "${image_name}")"
+
+    singletons::instance::stop "${name}"
+
+    if [ -n "${docker_image}" ]
+    then
+        logging::warning "Removing image ${docker_image}"
+        sudo docker rmi "${docker_image}"
+    fi
+}
+
+singletons::instance::stop() {
+    local name=${1:?Need instance name}
+    local image_name="$(echo "${name}" | tr '[A-Z]' '[a-z]')"
+    local singleton_name="$(singletons::instance::get_singleton "${image_name}")"
+
+    logging::warning "Stopping singleton ${singleton_name}"
+
+    sudo docker kill "${singleton_name}"
+    sudo docker rm "${singleton_name}"
+}
+
+singletons::instance::start() {
+    local name=${1:?Need instance name}
+    local image_name="$(echo "${name}" | tr '[A-Z]' '[a-z]')"
+    local singleton_name="$(singletons::instance::get_singleton "${image_name}")"
+
+    if [ -n "$(singletons::instance::get_container_instance ${image_name})" ]
+    then
+        logging::warning "Instance ${singleton_name} is already running"
+        return 0
+    fi
+
+    container_id="$(
+        sudo docker ps -a --filter ancestor="${image_name}" --format "{{.ID}}"
+    )"
+
+    if [ -n "${container_id}" ]
+    then
+        logging::info "Restarting existing container ${container_id} for image ${image_name}"
+        sudo docker start "${container_id}"
+        return $?
+    fi
+
+    if [ -z "$(singletons::instance::get_docker_image "${image_name}")" ]
+    then
+        logging::info "Building container image ${image_name}"
+
+        if ! singletons::instance::build "${name}"
+        then
+            logging::error "Cannot build container for ${name}"
+            return 255
+        fi
+    fi
+
+    logging::info "Starting container instance ${image_name} as ${singleton_name}"
+
+    case "${image_name}" in
+        *)
+            sudo docker run \
+                -v /home/dkw:/home/dkw \
+                -e TZ="Canada/Atlantic" \
+                --name "${singleton_name}" \
+                --memory=1g \
+                --cpus=0.5 \
+                -d "${image_name}"
+            ;;
+    esac
+}
+
+singletons::instance::attach() {
+    local name=${1:?Need instance name}
+    local image_name="$(echo "${name}" | tr '[A-Z]' '[a-z]')"
+
+    container_id="$(singletons::instance::get_container_instance ${image_name})"
+
+    if [ -z "${container_id}" ]
+    then
+        logging::error "Singleton instance for image ${image_name} is missing"
+        return 255
+    fi
+
+    exec sudo docker exec -it "${container_id}" bash
+}

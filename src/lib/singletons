@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+package_name=singletons
+first_name="${BASH_SOURCE[0]}"
+actual_name="$(readlink -f "${first_name}")"
+local_path="$(dirname "${actual_name}")"
+
+export SINGLETONS_VERSION="$(
+    find "${local_path}/${package_name}"-[.0-9]* -maxdepth 0 -mindepth 0 -type d -printf "%f\n" |
+    awk -F- '{print $NF;}' |
+    sort -nr |
+    head -1
+)"
+
+lib_path="${local_path}/${package_name}-${SINGLETONS_VERSION}"
+
+export SINGLETONS_SUBCOMMANDS="${lib_path}/subcommands"
+
+. "${lib_path}/instances"
+. "${lib_path}/logging"
+. "$(bashlib --lib)"
+
+singletons::version() {
+    echo "${SINGLETONS_VERSION}"
+}
+
+singletons::command_folder() {
+    if [ -n "${SINGLETONS_SUBCOMMANDS}" -a -d "${SINGLETONS_SUBCOMMANDS}/." ]
+    then
+        echo "${SINGLETONS_SUBCOMMANDS}"
+    fi
+}
+
+singletons::default_repo() {
+    echo "${HOME}/.container-singletons::default"
+}
+
+singletons::repo() {
+    local _folder="${SINGLETONS_DOCKERCONFIG_REPO}"
+
+    if [ -n "${1}" ]
+    then
+        _folder="${1}"
+    fi
+
+    if [ ! -d "${_folder}" ]
+    then
+        logging::error "No configuration repository found in '${_folder}'"
+        return 134
+    elif [ -n "${1}" ]
+    then
+        logging::warning "Selecting config repository in '${1}'"
+        export SINGLETONS_DOCKERCONFIG_REPO="${1}"
+    else
+        echo "${SINGLETONS_DOCKERCONFIG_REPO}"
+    fi
+}
+
+export SINGLETONS_DOCKERCONFIG_REPO="${SINGLETONS_DOCKERCONFIG_REPO:-$(singletons::default_repo)}"
