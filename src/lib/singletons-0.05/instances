@@ -151,14 +151,25 @@ singletons::instance::get_run_options() {
     then
         logging::error "Can't access repo folder '${repo}'"
         return $?
-    elif -f "${repo}/options.txt"
+    elif [ ! -f "${repo}/options.txt" ]
     then
-        eval convert_parameters "$(
-            cat "${repo}/options.txt" |
-            sed -e 's/#.*$//g' -e '/^[ ]*$/d' |
-            tr '\n' ' '
-        )"
+        return
     fi
+
+    local _contents="$(
+        cat "${repo}/options.txt" |
+        sed -e 's/#.*$//g' -e '/^[ ]*$/d'
+    )"
+
+    if [ -z "${_contents}" ]
+    then
+        return
+    fi
+
+    eval convert_parameters "$(
+        echo -n "${_contents}" |
+        tr '\n' ' '
+    )"
 }
 
 singletons::instance::start() {
@@ -211,7 +222,10 @@ singletons::instance::start() {
 
     while read _row
     do
-        extra_options[${#extra_options[@]}]="${_row}"
+        if [ -n "${_row}" ]
+        then
+            extra_options[${#extra_options[@]}]="${_row}"
+        fi
     done <<< "$( eval singletons::instance::get_run_options "${name}" )"
 
     sudo docker run \
