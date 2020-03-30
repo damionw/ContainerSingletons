@@ -45,9 +45,9 @@ singletons::instance::select_config() {
         return $?
     elif [ -d .git ]
     then
-        git checkout "${name}"
+        git checkout "${name}" >/dev/null
     else
-        hg branch "${name}"
+        hg branch "${name}" >/dev/null
     fi
 
     _status=$?
