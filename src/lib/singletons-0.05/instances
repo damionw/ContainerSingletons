@@ -229,7 +229,7 @@ singletons::instance::start() {
     done <<< "$( eval singletons::instance::get_run_options "${name}" )"
 
     sudo docker run \
-        -v /home/dkw:/home/dkw \
+        -v "${HOME}:${HOME}" \
         -e TZ="Canada/Atlantic" \
         --name "${singleton_name}" \
         -v "${profile_dir}:/home/developer" \
