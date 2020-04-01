@@ -47,7 +47,7 @@ singletons::instance::select_config() {
     then
         git checkout "${name}" >/dev/null
     else
-        hg branch "${name}" >/dev/null
+        hg checkout "${name}" >/dev/null
     fi
 
     _status=$?
@@ -209,17 +209,25 @@ singletons::instance::start() {
     chmod -R 770 "${profile_dir}"
     chown -R 1000 "${profile_dir}"
 
+    local _tzchecksum=$(md5sum -b /etc/localtime | awk '{print $1;}')
+
+    while read _row
+    do
+        extra_options[${#extra_options[@]}]="-e"
+        extra_options[${#extra_options[@]}]="TZ=\"${_row}\""
+    done <<< "$(cd /usr/share/zoneinfo && find * -type f -exec bash -c "md5sum -b {} | grep -q '^$_tzchecksum'" \; -print)"
+
     while read _row
     do
         if [ -n "${_row}" ]
         then
+            eval _row="${_row}"
             extra_options[${#extra_options[@]}]="${_row}"
         fi
     done <<< "$(singletons::instance::get_run_options "${name}")"
 
     sudo docker run \
         -v "${HOME}:${HOME}" \
-        -e TZ="Canada/Atlantic" \
         --name "${singleton_name}" \
         -v "${profile_dir}:/home/developer" \
         --memory=1g \

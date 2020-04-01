@@ -9,6 +9,14 @@ DIR_COMPONENTS := $(foreach name, bin share lib, build/$(name)) build/share/$(PA
 
 all: build
 
+demo: build/repo
+	build/bin/container-singletons --repo=$< --instance=Demo --new --start
+	build/bin/container-singletons --repo=$< --instance=Demo --attach
+	build/bin/container-singletons --repo=$< --instance=Demo --stop
+
+build/repo: build
+	build/bin/container-singletons config-repo --repo=$@ --create=http://hg/DockerFiles
+
 help:
 	@echo "Usage: make build|tests|all|clean|version|install"
 
