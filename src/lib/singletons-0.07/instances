@@ -96,7 +96,7 @@ singletons::instance::build() {
 
     singletons::instance::stop "${image_name}"
 
-    if ! nice sudo docker build --tag ${image_name} .
+    if ! nice sudo docker build --tag "${image_name}" --build-arg UID=$(id -u) --build-arg GID=$(id -g) .
     then
         logging::error "Failed building container image ${image_name}"
         status=77
@@ -119,6 +119,16 @@ singletons::instance::delete() {
         logging::warning "Removing image ${docker_image}"
         sudo docker rmi "${docker_image}"
     fi
+}
+
+singletons::instance::status() {
+    local name=${1:?Need instance name}
+    local image_name="$(echo "${name}" | tr '[A-Z]' '[a-z]')"
+    local singleton_name="$(singletons::instance::get_singleton "${image_name}")"
+    local docker_image="$(singletons::instance::get_docker_image "${image_name}")"
+    local container_id="$(singletons::instance::get_container_instance ${image_name})"
+
+    echo "${name} ${singleton_name} ${container_id:-down}"
 }
 
 singletons::instance::stop() {
@@ -172,6 +182,7 @@ singletons::instance::start() {
         return 0
     fi
 
+    # Find the stopped container
     container_id="$(
         sudo docker ps -a --filter ancestor="${image_name}" --format "{{.ID}}"
     )"

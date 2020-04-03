@@ -64,6 +64,7 @@ showhelp() {
         [restart]="Restart the selected singleton container instance"
         [start]="Start the selected singleton container instance"
         [stop]="Stop the selected singleton container instance"
+        [status]="Retrieve singleton container status"
         [attach]="Attach the selected singleton container instance"
         [names]="Display available singleton instance names"
         [list]="Display available singleton instance names"
@@ -102,7 +103,7 @@ showhelp() {
 #       will cause the first non option parameter to be discarded. Here, we just
 #       use -h (help)
 #===================================================================================
-long_options="help,version,debug,info,warning,error,fatal,repo::,instance:,start,stop,restart,attach,lib,commands,names,list,new,delete"
+long_options="help,version,debug,info,warning,error,fatal,repo::,instance:,start,stop,restart,attach,lib,commands,names,list,new,delete,status"
 
 OPTION_TEMP=$(getopt -a -o hv --long ${long_options} -- "$@")
 
@@ -164,7 +165,13 @@ do
             instance_name="${2}"
             shift 2
             ;;
-            
+
+        --status)
+            singletons::instance::status "${instance_name}"
+            shift;
+            exit 0
+            ;;
+
         --delete)
             singletons::instance::delete "${instance_name}" # Deletion will stop
             ;;

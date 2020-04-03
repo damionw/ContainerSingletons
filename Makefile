@@ -10,12 +10,24 @@ DIR_COMPONENTS := $(foreach name, bin share lib, build/$(name)) build/share/$(PA
 all: build
 
 demo: build/repo
-	build/bin/container-singletons --repo=$< --instance=Demo --new --start
-	build/bin/container-singletons --repo=$< --instance=Demo --attach
-	build/bin/container-singletons --repo=$< --instance=Demo --stop
+	@build/bin/container-singletons --repo=$< --instance=Demo --new --start
+	@build/bin/container-singletons --repo=$< --instance=Demo --status
+	@build/bin/container-singletons --repo=$< --instance=Demo --attach
+	@build/bin/container-singletons --repo=$< --instance=Demo --stop
+	@build/bin/container-singletons --repo=$< --instance=Demo --status
 
 build/repo: build
-	build/bin/container-singletons config-repo --repo=$@ --create=http://hg/DockerFiles
+	-@rm -rf $@e
+	@mkdir $@
+	@(cd $@ && touch Dockerfile)
+	@(cd $@ && git init .)
+	@(cd $@ && git add Dockerfile)
+	@(cd $@ && git commit -m created)
+	@(cd $@ && git branch Demo)
+	@(cd $@ && git checkout Demo)
+	@cp repo/Dockerfile $@
+	@(cd $@ && git add Dockerfile)
+	@(cd $@ && git commit -m "added branch Demo")
 
 help:
 	@echo "Usage: make build|tests|all|clean|version|install"

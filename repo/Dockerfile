@@ -1,0 +1,3 @@
+from ubuntu:18.04
+
+CMD sleep 86400
