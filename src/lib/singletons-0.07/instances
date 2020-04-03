@@ -12,6 +12,10 @@ local_path="$(dirname "${actual_name}")"
 #===================================================================================
 #                                 Functions
 #===================================================================================
+singletons::instance::get_container_username() {
+    echo developer
+}
+
 singletons::instance::get_singleton() {
     echo "${1:?Provide image name}.singleton"
 }
@@ -96,7 +100,7 @@ singletons::instance::build() {
 
     singletons::instance::stop "${image_name}"
 
-    if ! nice sudo docker build --tag "${image_name}" --build-arg UID=$(id -u) --build-arg GID=$(id -g) .
+    if ! nice sudo docker build --tag "${image_name}" --build-arg UNAME=$(singletons::instance::get_container_username) --build-arg UID=$(id -u) --build-arg GID=$(id -g) .
     then
         logging::error "Failed building container image ${image_name}"
         status=77
@@ -240,7 +244,7 @@ singletons::instance::start() {
     sudo docker run \
         -v "${HOME}:${HOME}" \
         --name "${singleton_name}" \
-        -v "${profile_dir}:/home/developer" \
+        -v "${profile_dir}:/home/$(singletons::instance::get_container_username)" \
         --memory=1g \
         --cpus=0.5 \
         "${extra_options[@]}" \
