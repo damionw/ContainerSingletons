@@ -146,35 +146,6 @@ singletons::instance::stop() {
     sudo docker rm "${singleton_name}"
 }
 
-singletons::instance::get_run_options() {
-    local name=${1:?Need instance name}
-    local repo=
-
-    convert_parameters() {
-        local args=("$@")
-
-        for ((i=0; i < ${#args[@]}; ++i)) {
-            eval cat <<< "${args[${i}]}"
-        }
-    }
-
-    logging::info "Building container image ${image_name}"
-
-    if ! singletons::instance::select_config "${name}"
-    then
-        return $?
-    elif ! repo="$(singletons::repo)"
-    then
-        logging::error "Can't access repo folder '${repo}'"
-        return $?
-    elif [ ! -f "${repo}/options.txt" ]
-    then
-        return
-    fi
-
-    convert_parameters $(sed -e 's/#.*$//g' -e '/^[ ]*$/d' < "${repo}/options.txt") | tee /tmp/fred
-}
-
 singletons::instance::start() {
     local name=${1:?Need instance name}
     local image_name="$(echo "${name}" | tr '[A-Z]' '[a-z]')"
@@ -232,14 +203,34 @@ singletons::instance::start() {
         extra_options[${#extra_options[@]}]="TZ=\"${_row}\""
     done <<< "$(cd /usr/share/zoneinfo && find * -type f -exec bash -c "md5sum -b {} | grep -q '^$_tzchecksum'" \; -print)"
 
-    while read _row
-    do
-        if [ -n "${_row}" ]
-        then
-            eval _row="${_row}"
+    local repo
+
+    if ! singletons::instance::select_config "${name}"
+    then
+        return $?
+    elif ! repo="$(singletons::repo)"
+    then
+        logging::error "Can't access repo folder '${repo}'"
+        return $?
+    elif [ -f "${repo}/options.txt" ]
+    then
+        local script='func() {
+            local args=("$@")
+
+            for ((i=0; i < ${#args[@]}; ++i)) {
+                cat <<< "${args[${i}]}"
+            }
+        }
+        func '"$(
+            sed -e 's/#.*$//g' -e '/^[ ]*$/d' < "${repo}/options.txt" |
+            tr '\n' ' '
+        )"
+
+        while read _row
+        do
             extra_options[${#extra_options[@]}]="${_row}"
-        fi
-    done <<< "$(singletons::instance::get_run_options "${name}")"
+        done <<<"$(bash <<< "${script}")"
+    fi
 
     sudo docker run \
         -v "${HOME}:${HOME}" \
