@@ -25,7 +25,25 @@ singletons::instance::get_container_instance() {
 }
 
 singletons::instance::get_container_address() {
-    sudo docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(singletons::instance::get_container_instance ${1})
+    local _instance_name
+    local _container_id
+
+    if ! _instance_name="${1:?Must provide an instance name}"
+    then
+        return $?
+    fi
+
+    local _image_name="$(echo "${_instance_name}" | tr '[A-Z]' '[a-z]')"
+
+    if ! _container_id=$(singletons::instance::get_container_instance "${_image_name}")
+    then
+        return $?
+    elif [ -z "${_container_id}" ]
+    then
+        return 177
+    else
+        sudo docker inspect --format '{{ .NetworkSettings.IPAddress }}' "${_container_id}"
+    fi
 }
 
 singletons::instance::get_docker_image() {

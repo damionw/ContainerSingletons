@@ -59,6 +59,7 @@ showhelp() {
         [version]="Produce the library's version string"
         [commands]="Produce the list of subcommands"
         [instance:]="Select the singleton container instance name"
+        [network]="Get container host addresses"
         [repo::]="Select a configuration repo"
         [new]="Build a singleton container instance from scratch"
         [restart]="Restart the selected singleton container instance"
@@ -103,7 +104,7 @@ showhelp() {
 #       will cause the first non option parameter to be discarded. Here, we just
 #       use -h (help)
 #===================================================================================
-long_options="help,version,debug,info,warning,error,fatal,repo::,instance:,start,stop,restart,attach,lib,commands,names,list,new,delete,status"
+long_options="help,version,debug,info,warning,error,fatal,repo::,instance:,start,stop,restart,attach,lib,commands,names,list,new,delete,status,network"
 
 OPTION_TEMP=$(getopt -a -o hv --long ${long_options} -- "$@")
 
@@ -140,6 +141,23 @@ do
         --lib)
             echo "${library_import_file}"
             shift
+            exit 0
+            ;;
+
+        --network)
+            while read instance
+            do
+                if [ -z "${instance}" ]
+                then
+                    continue
+                fi
+
+                if address="$(singletons::instance::get_container_address "${instance}")"
+                then
+                    echo "${instance} ${address}"
+                fi
+            done <<< "${instance_name:-$(singletons::instance::names)}"
+
             exit 0
             ;;
 
