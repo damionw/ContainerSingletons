@@ -192,6 +192,8 @@ do
 
         --delete)
             singletons::instance::delete "${instance_name}" # Deletion will stop
+            shift;
+            exit 0
             ;;
 
         --restart)
