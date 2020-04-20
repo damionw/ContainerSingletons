@@ -218,7 +218,7 @@ singletons::instance::start() {
     while read _row
     do
         extra_options[${#extra_options[@]}]="-e"
-        extra_options[${#extra_options[@]}]="TZ=\"${_row}\""
+        extra_options[${#extra_options[@]}]="TZ=${_row}"
     done <<< "$(cd /usr/share/zoneinfo && find * -type f -exec bash -c "md5sum -b {} | grep -q '^$_tzchecksum'" \; -print)"
 
     local repo
