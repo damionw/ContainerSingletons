@@ -67,9 +67,9 @@ singletons::instance::select_config() {
         return $?
     elif [ -d .git ]
     then
-        (git checkout "${name}" && git pull) >/dev/null
+        if (git checkout "${name}" && (git pull || true)) >/dev/null
     else
-        (hg checkout "${name}" && hg fetch) >/dev/null
+        (hg checkout "${name}" && (hg fetch || true)) >/dev/null
     fi
 
     _status=$?
