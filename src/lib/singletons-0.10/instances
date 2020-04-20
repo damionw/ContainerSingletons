@@ -213,7 +213,7 @@ singletons::instance::start() {
     chmod -R 770 "${profile_dir}"
     chown -R 1000 "${profile_dir}"
 
-    local _tzchecksum=$(md5sum -b /etc/localtime | awk '{prin`t $1;}')
+    local _tzchecksum=$(md5sum -b /etc/localtime | awk '{print $1;}')
 
     while read _row
     do
