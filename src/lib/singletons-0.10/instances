@@ -67,9 +67,9 @@ singletons::instance::select_config() {
         return $?
     elif [ -d .git ]
     then
-        git checkout "${name}" >/dev/null
+        (git checkout "${name}" && git pull) >/dev/null
     else
-        hg checkout "${name}" >/dev/null
+        (hg checkout "${name}" && hg fetch) >/dev/null
     fi
 
     _status=$?
@@ -213,7 +213,7 @@ singletons::instance::start() {
     chmod -R 770 "${profile_dir}"
     chown -R 1000 "${profile_dir}"
 
-    local _tzchecksum=$(md5sum -b /etc/localtime | awk '{print $1;}')
+    local _tzchecksum=$(md5sum -b /etc/localtime | awk '{prin`t $1;}')
 
     while read _row
     do
