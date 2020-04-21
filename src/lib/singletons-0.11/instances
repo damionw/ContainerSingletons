@@ -130,7 +130,13 @@ singletons::instance::build() {
 
     singletons::instance::stop "${image_name}"
 
-    if ! nice sudo docker build --tag "${image_name}" --build-arg UNAME=$(singletons::instance::get_container_username) --build-arg UID=$(id -u) --build-arg GID=$(id -g) .
+    if ! nice sudo docker build \
+        --tag "${image_name}" \
+        --build-arg UNAME=$(singletons::instance::get_container_username) \
+        --build-arg UID=$(id -u) \
+        --build-arg GID=$(id -g) \
+        --build-arg TZ=$(singletons::instance::get_timezone) \
+        .
     then
         logging::error "Failed building container image ${image_name}"
         status=77
