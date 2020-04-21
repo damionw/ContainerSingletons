@@ -12,6 +12,18 @@ local_path="$(dirname "${actual_name}")"
 #===================================================================================
 #                                 Functions
 #===================================================================================
+singletons::instance::get_timezone() {
+    local _tzchecksum=$(md5sum -b /etc/localtime | awk '{print $1;}')
+
+    while read _row
+    do
+        echo "${_row}"
+        return 0
+    done <<< "$(cd /usr/share/zoneinfo && find * -type f -exec bash -c "md5sum -b {} | grep -q '^$_tzchecksum'" \; -print)"
+
+    false
+}
+
 singletons::instance::get_container_username() {
     echo developer
 }
@@ -213,13 +225,8 @@ singletons::instance::start() {
     chmod -R 770 "${profile_dir}"
     chown -R 1000 "${profile_dir}"
 
-    local _tzchecksum=$(md5sum -b /etc/localtime | awk '{print $1;}')
-
-    while read _row
-    do
-        extra_options[${#extra_options[@]}]="-e"
-        extra_options[${#extra_options[@]}]="TZ=${_row}"
-    done <<< "$(cd /usr/share/zoneinfo && find * -type f -exec bash -c "md5sum -b {} | grep -q '^$_tzchecksum'" \; -print)"
+    extra_options[${#extra_options[@]}]="-e"
+    extra_options[${#extra_options[@]}]="TZ=$(singletons::instance::get_timezone)"
 
     local repo
 
