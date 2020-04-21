@@ -266,7 +266,7 @@ singletons::instance::start() {
     sudo docker run \
         -v "${HOME}:${HOME}" \
         --name "${singleton_name}" \
-        -v "${profile_dir}:/home/$(singletons::instance::get_container_username)" \
+        -v "${profile_dir}:/home/$(singletons::instance::get_container_username)/Host" \
         --memory=1g \
         --cpus=0.5 \
         "${extra_options[@]}" \
