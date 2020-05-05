@@ -186,8 +186,9 @@ do
 
         --status)
             singletons::instance::status "${instance_name}"
+            result=$?
             shift;
-            exit 0
+            exit $result
             ;;
 
         --delete)

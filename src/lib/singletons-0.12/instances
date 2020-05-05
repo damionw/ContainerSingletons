@@ -32,6 +32,17 @@ singletons::instance::get_singleton() {
     echo "${1:?Provide image name}.singleton"
 }
 
+singletons::instance::get_image_from_instance() {
+    local _instance_name
+
+    if ! _instance_name="${1:?Must provide an instance name}"
+    then
+        return 211
+    fi
+
+    echo "${_instance_name}" | tr '[A-Z]' '[a-z]'
+}
+
 singletons::instance::get_container_instance() {
     sudo docker ps --filter ancestor="${1:?Provide image name}" --format "{{.ID}}"
 }
@@ -115,7 +126,12 @@ singletons::instance::names() {
 singletons::instance::build() {
     local name=${1:?Need instance name}
     local status=0
-    local image_name="$(echo "${name}" | tr '[A-Z]' '[a-z]')"
+    local image_name
+
+    if ! image_name="$(singletons::instance::get_image_from_instance "${name}")"
+    then
+        return $?
+    fi
 
     logging::info "Building container image ${image_name}"
 
@@ -148,7 +164,13 @@ singletons::instance::build() {
 
 singletons::instance::delete() {
     local name=${1:?Need instance name}
-    local image_name="$(echo "${name}" | tr '[A-Z]' '[a-z]')"
+    local image_name
+
+    if ! image_name="$(singletons::instance::get_image_from_instance "${name}")"
+    then
+        return $?
+    fi
+
     local singleton_name="$(singletons::instance::get_singleton "${image_name}")"
     local docker_image="$(singletons::instance::get_docker_image "${image_name}")"
 
@@ -163,17 +185,30 @@ singletons::instance::delete() {
 
 singletons::instance::status() {
     local name=${1:?Need instance name}
-    local image_name="$(echo "${name}" | tr '[A-Z]' '[a-z]')"
+    local image_name
+
+    if ! image_name="$(singletons::instance::get_image_from_instance "${name}")"
+    then
+        return $?
+    fi
+
     local singleton_name="$(singletons::instance::get_singleton "${image_name}")"
     local docker_image="$(singletons::instance::get_docker_image "${image_name}")"
     local container_id="$(singletons::instance::get_container_instance ${image_name})"
 
     echo "${name} ${singleton_name} ${container_id:-down}"
+    test -n "${container_id}"
 }
 
 singletons::instance::stop() {
     local name=${1:?Need instance name}
-    local image_name="$(echo "${name}" | tr '[A-Z]' '[a-z]')"
+    local image_name
+
+    if ! image_name="$(singletons::instance::get_image_from_instance "${name}")"
+    then
+        return $?
+    fi
+
     local singleton_name="$(singletons::instance::get_singleton "${image_name}")"
 
     logging::warning "Stopping singleton ${singleton_name}"
@@ -184,7 +219,13 @@ singletons::instance::stop() {
 
 singletons::instance::start() {
     local name=${1:?Need instance name}
-    local image_name="$(echo "${name}" | tr '[A-Z]' '[a-z]')"
+    local image_name
+
+    if ! image_name="$(singletons::instance::get_image_from_instance "${name}")"
+    then
+        return $?
+    fi
+
     local singleton_name="$(singletons::instance::get_singleton "${image_name}")"
 
     if [ -n "$(singletons::instance::get_container_instance ${image_name})" ]
@@ -275,7 +316,12 @@ singletons::instance::start() {
 
 singletons::instance::attach() {
     local name=${1:?Need instance name}
-    local image_name="$(echo "${name}" | tr '[A-Z]' '[a-z]')"
+    local image_name
+
+    if ! image_name="$(singletons::instance::get_image_from_instance "${name}")"
+    then
+        return $?
+    fi
 
     container_id="$(singletons::instance::get_container_instance ${image_name})"
 
