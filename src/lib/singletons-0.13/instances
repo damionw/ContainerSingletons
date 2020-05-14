@@ -90,9 +90,9 @@ singletons::instance::select_config() {
         return $?
     elif [ -d .git ]
     then
-        (git checkout "${name}" && (git pull || true)) >/dev/null
+        (git checkout "${name}" && (git pull >/dev/null 2>&1 || true)) >/dev/null
     else
-        (hg checkout "${name}" && (hg fetch || true)) >/dev/null
+        (hg checkout "${name}" && (hg fetch >/dev/null 2>&1 || true)) >/dev/null
     fi
 
     _status=$?
@@ -332,4 +332,26 @@ singletons::instance::attach() {
     fi
 
     exec sudo docker exec -it "${container_id}" bash
+}
+
+singletons::instance::exec() {
+    local name=${1:?Need instance name}
+    shift
+    local commands="${@:-false}"
+    local image_name
+
+    if ! image_name="$(singletons::instance::get_image_from_instance "${name}")"
+    then
+        return $?
+    fi
+
+    container_id="$(singletons::instance::get_container_instance ${image_name})"
+
+    if [ -z "${container_id}" ]
+    then
+        logging::error "Singleton instance for image ${image_name} is missing"
+        return 255
+    fi
+
+    exec sudo docker exec -it "${container_id}" /bin/bash -c "${commands}"
 }
