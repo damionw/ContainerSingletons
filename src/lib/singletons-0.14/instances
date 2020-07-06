@@ -304,8 +304,24 @@ singletons::instance::start() {
         done <<<"$(bash <<< "${script}")"
     fi
 
+    local _hosts_file="${HOME}/tmp/hosts.${image_name}"
+    local _hosts_instance
+    local _ipaddr
+
+    while read _hosts_instance
+    do
+        if [ -z "${_hosts_instance}" ]
+        then
+            continue
+        elif _ipaddr="$(singletons::instance::get_container_address "${_hosts_instance}")"
+        then
+            echo "${_ipaddr} ${_hosts_instance}"
+        fi
+    done <<< "$(singletons::instance::names)" > "${_hosts_file}"
+
     sudo docker run \
         -v "${HOME}:${HOME}" \
+        -v "${_hosts_file}:/etc/hosts" \
         --name "${singleton_name}" \
         -v "${profile_dir}:/home/$(singletons::instance::get_container_username)/Host" \
         --memory=1g \
