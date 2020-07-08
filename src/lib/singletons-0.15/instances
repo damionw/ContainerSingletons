@@ -209,7 +209,15 @@ singletons::instance::stop() {
         return $?
     fi
 
+    local _host_manager="$(singletons::hostmanager)"
     local singleton_name="$(singletons::instance::get_singleton "${image_name}")"
+    local _ipaddr=
+
+    if test -x "${_host_manager}" && _ipaddr="$(singletons::instance::get_container_address "${name}")"
+    then
+        logging::warning "Deregistering host ${name}"
+        "${_host_manager}" remove "${_ipaddr}" "${name}"
+    fi
 
     logging::warning "Stopping singleton ${singleton_name}"
 
@@ -269,8 +277,10 @@ singletons::instance::start() {
         mkdir -p "${profile_dir}"
     fi
 
-    chmod -R 770 "${profile_dir}"
-    chown -R 1000 "${profile_dir}"
+    {
+        chmod -R 770 "${profile_dir}"
+        chown -R 1000 "${profile_dir}"
+    } >/dev/null 3>&1
 
     extra_options[${#extra_options[@]}]="-e"
     extra_options[${#extra_options[@]}]="TZ=$(singletons::instance::get_timezone)"
@@ -306,7 +316,7 @@ singletons::instance::start() {
 
     local _hosts_file="${HOME}/tmp/hosts.${image_name}"
     local _hosts_instance
-    local _ipaddr
+    local _ipaddr=
 
     {
         echo "127.0.0.1 localhost ${name}"
@@ -323,6 +333,8 @@ singletons::instance::start() {
         done <<< "$(singletons::instance::names)"
     } > "${_hosts_file}"
 
+    chmod 777 "${_hosts_file}"
+
     sudo docker run \
         -v "${HOME}:${HOME}" \
         -v "${_hosts_file}:/etc/hosts" \
@@ -332,6 +344,17 @@ singletons::instance::start() {
         --cpus=0.5 \
         "${extra_options[@]}" \
         -d "${image_name}"
+
+    local _result=$?
+    local _host_manager="$(singletons::hostmanager)"
+
+    if [ -x "${_host_manager}" ] && _ipaddr="$(singletons::instance::get_container_address "${name}")"
+    then
+        logging::warning "Registering host ${_hosts_instance} as ${_ipaddr}"
+        "${_host_manager}" add "${_ipaddr}" "${name}"
+    fi
+
+    return ${_result}
 }
 
 singletons::instance::attach() {
