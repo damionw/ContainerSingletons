@@ -309,7 +309,7 @@ singletons::instance::start() {
     local _ipaddr
 
     {
-        echo 127.0.0.1 localhost
+        echo "127.0.0.1 localhost ${name}"
 
         while read _hosts_instance
         do
