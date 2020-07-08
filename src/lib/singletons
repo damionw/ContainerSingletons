@@ -15,6 +15,7 @@ export SINGLETONS_VERSION="$(
 lib_path="${local_path}/${package_name}-${SINGLETONS_VERSION}"
 
 export SINGLETONS_SUBCOMMANDS="${lib_path}/subcommands"
+export SINGLETONS_HOSTMANAGER=
 
 . "${lib_path}/instances"
 . "${lib_path}/logging"
@@ -28,6 +29,15 @@ singletons::command_folder() {
     if [ -n "${SINGLETONS_SUBCOMMANDS}" -a -d "${SINGLETONS_SUBCOMMANDS}/." ]
     then
         echo "${SINGLETONS_SUBCOMMANDS}"
+    fi
+}
+
+singletons::hostmanager() {
+    if [ -z "${1}" ]
+    then
+        echo "${SINGLETONS_HOSTMANAGER}"
+    else
+        export SINGLETONS_HOSTMANAGER="${1}"
     fi
 }
 

@@ -61,12 +61,14 @@ showhelp() {
         [instance:]="Select the singleton container instance name"
         [network]="Get container host addresses"
         [repo::]="Select a configuration repo"
+        [hostman:]="Select host manager script"
         [new]="Build a singleton container instance from scratch"
         [restart]="Restart the selected singleton container instance"
         [start]="Start the selected singleton container instance"
         [stop]="Stop the selected singleton container instance"
         [status]="Retrieve singleton container status"
         [attach]="Attach the selected singleton container instance"
+        [console]="Attach the selected singleton container instance"
         [exec]="Run shell command(s) against the selected singleton container instance"
         [names]="Display available singleton instance names"
         [list]="Display available singleton instance names"
@@ -105,7 +107,13 @@ showhelp() {
 #       will cause the first non option parameter to be discarded. Here, we just
 #       use -h (help)
 #===================================================================================
-long_options="help,version,debug,info,warning,error,fatal,repo::,instance:,start,stop,restart,attach,lib,commands,names,list,new,delete,status,network,exec:"
+long_options=
+long_options="${long_options}${long_options:+,}help,version,lib"
+long_options="${long_options}${long_options:+,}debug,error,info,warning,fatal"
+long_options="${long_options}${long_options:+,}repo::,instance:,hostman:"
+long_options="${long_options}${long_options:+,}start,stop,restart"
+long_options="${long_options}${long_options:+,}attach,console,exec:"
+long_options="${long_options}${long_options:+,}commands,names,list,status,network"
 
 OPTION_TEMP=$(getopt -a -o hv --long ${long_options} -- "$@")
 
@@ -187,9 +195,7 @@ do
 
         --status)
             singletons::instance::status "${instance_name}"
-            result=$?
-            shift;
-            exit $result
+            exit $?
             ;;
 
         --delete)
@@ -230,9 +236,14 @@ do
             shift
             ;;
 
-        --attach)
+        --attach|--console)
             singletons::instance::attach "${instance_name}"
             exit $?
+            ;;
+
+        --hostman)
+            singletons::hostmanager "${2}"
+            shift 2
             ;;
 
         --exec)
