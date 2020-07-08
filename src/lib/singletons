@@ -37,7 +37,7 @@ singletons::hostmanager() {
     then
         echo "${SINGLETONS_HOSTMANAGER}"
     else
-        export SINGLETONS_HOSTMANAGER="${1}"
+        export SINGLETONS_HOSTMANAGER="$(which "${1}")"
     fi
 }
 
