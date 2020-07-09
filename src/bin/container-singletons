@@ -62,7 +62,7 @@ showhelp() {
         [network]="Get container host addresses"
         [repo::]="Select a configuration repo"
         [hostman:]="Select host manager script"
-        [new]="Build a singleton container instance from scratch"
+        [new]="(re)Build a singleton container instance from scratch"
         [restart]="Restart the selected singleton container instance"
         [start]="Start the selected singleton container instance"
         [stop]="Stop the selected singleton container instance"
@@ -114,6 +114,7 @@ long_options="${long_options}${long_options:+,}repo::,instance:,hostman:"
 long_options="${long_options}${long_options:+,}start,stop,restart"
 long_options="${long_options}${long_options:+,}attach,console,exec:"
 long_options="${long_options}${long_options:+,}commands,names,list,status,network"
+long_options="${long_options}${long_options:+,}new"
 
 OPTION_TEMP=$(getopt -a -o hv --long ${long_options} -- "$@")
 
