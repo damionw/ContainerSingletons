@@ -195,7 +195,16 @@ do
             ;;
 
         --status)
-            singletons::instance::status "${instance_name}"
+            while read instance
+            do
+                if [ -z "${instance}" ]
+                then
+                    continue
+                fi
+
+                singletons::instance::status "${instance}"
+            done <<< "${instance_name:-$(singletons::instance::names)}"
+
             exit $?
             ;;
 
