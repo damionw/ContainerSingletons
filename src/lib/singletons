@@ -18,6 +18,7 @@ export SINGLETONS_SUBCOMMANDS="${lib_path}/subcommands"
 export SINGLETONS_HOSTMANAGER=
 
 . "${lib_path}/instances"
+. "${lib_path}/hosts"
 . "${lib_path}/logging"
 . "$(bashlib --lib)"
 
@@ -32,17 +33,12 @@ singletons::command_folder() {
     fi
 }
 
-singletons::hostmanager() {
-    if [ -z "${1}" ]
-    then
-        echo "${SINGLETONS_HOSTMANAGER}"
-    else
-        export SINGLETONS_HOSTMANAGER="$(which "${1}")"
-    fi
-}
-
 singletons::default_repo() {
     echo "${HOME}/.container-singletons::default"
+}
+
+singletons::default_hosts() {
+    echo "${HOME}/.container-singletons.hosts"
 }
 
 singletons::repo() {

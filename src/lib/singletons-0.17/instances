@@ -7,6 +7,7 @@ local_path="$(dirname "${actual_name}")"
 #===================================================================================
 #                                 Imports
 #===================================================================================
+. "${local_path}/hosts"
 . "${local_path}/logging"
 
 #===================================================================================
@@ -211,13 +212,9 @@ singletons::instance::stop() {
 
     local _host_manager="$(singletons::hostmanager)"
     local singleton_name="$(singletons::instance::get_singleton "${image_name}")"
-    local _ipaddr=
+    local _ipaddr="$(singletons::instance::get_container_address "${name}")"
 
-    if test -x "${_host_manager}" && _ipaddr="$(singletons::instance::get_container_address "${name}")"
-    then
-        logging::warning "Deregistering host ${name}"
-        "${_host_manager}" remove "${_ipaddr}" "${name}"
-    fi
+    singletons::hosts::update remove "${_ipaddr}" "${name}"
 
     logging::warning "Stopping singleton ${singleton_name}"
 
@@ -314,7 +311,7 @@ singletons::instance::start() {
         done <<<"$(bash <<< "${script}")"
     fi
 
-    local _hosts_file="${HOME}/tmp/hosts.${image_name}"
+    local _hosts_file="$(singletons::hosts::hostfile)"
     local _hosts_instance
     local _ipaddr=
 
@@ -346,13 +343,10 @@ singletons::instance::start() {
         -d "${image_name}"
 
     local _result=$?
-    local _host_manager="$(singletons::hostmanager)"
 
-    if [ -x "${_host_manager}" ] && _ipaddr="$(singletons::instance::get_container_address "${name}")"
-    then
-        logging::warning "Registering host ${_hosts_instance} as ${_ipaddr}"
-        "${_host_manager}" add "${_ipaddr}" "${name}"
-    fi
+    local _ipaddr="$(singletons::instance::get_container_address "${name}")"
+
+    singletons::hosts::update add "${_ipaddr}" "${name}"
 
     return ${_result}
 }

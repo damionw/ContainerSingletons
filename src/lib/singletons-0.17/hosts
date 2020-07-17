@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+first_name="${BASH_SOURCE[0]}"
+actual_name="$(readlink -f "${first_name}")"
+local_path="$(dirname "${actual_name}")"
+
+#===================================================================================
+#                                 Imports
+#===================================================================================
+. "${local_path}/logging"
+
+#===================================================================================
+#                                 Functions
+#===================================================================================
+singletons::hosts::manager() {
+    if [ -n "${1}" ]
+    then
+        export SINGLETONS_HOSTMANAGER="$(which "${1}")"
+    elif [ -z "${SINGLETONS_HOSTMANAGER}" ]
+    then
+        return 255
+    else
+        echo "${SINGLETONS_HOSTMANAGER}"
+    fi
+}
+
+singletons::hosts::hostfile() {
+    if [ -n "${1}" ]
+    then
+        export SINGLETONS_HOSTFILE="${1}"
+    else
+        echo "${SINGLETONS_HOSTFILE:-$(singletons::default_hosts)}"
+    fi
+}
+
+singletons::hosts::update() {
+    local _host_manager
+    local _command="${1:?Need command}"
+    local _ipaddr="${2:?Need address}"
+    local _host="${3}"
+
+    if ! _host_manager="$(singletons::hosts::manager)"
+    then
+        return 123
+    elif [ ! -x "${_host_manager}" ]
+    then
+        return 107
+    fi
+
+    "${_host_manager}" "${_command}" "${_ipaddr}" "${_host}"
+}
