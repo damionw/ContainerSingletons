@@ -15,7 +15,16 @@ local_path="$(dirname "${actual_name}")"
 singletons::hosts::manager() {
     if [ -n "${1}" ]
     then
-        export SINGLETONS_HOSTMANAGER="$(which "${1}")"
+        local _executable="$(which "${1}" || echo "$(singletons::command_folder)/${1}")"
+
+        if [ -x "${_executable}" ]
+        then
+            logging::warning "Selecting hosts manager '${_executable}'"
+            export SINGLETONS_HOSTMANAGER="${_executable}"
+        else
+            logging::error "Unknown hosts manager '${1}'"
+            return 255
+        fi
     elif [ -z "${SINGLETONS_HOSTMANAGER}" ]
     then
         return 255

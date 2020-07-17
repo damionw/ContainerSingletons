@@ -210,11 +210,13 @@ singletons::instance::stop() {
         return $?
     fi
 
-    local _host_manager="$(singletons::hostmanager)"
     local singleton_name="$(singletons::instance::get_singleton "${image_name}")"
     local _ipaddr="$(singletons::instance::get_container_address "${name}")"
 
-    singletons::hosts::update remove "${_ipaddr}" "${name}"
+    if [ -n "${_ipaddr}" -a -n "${name}" ]
+    then
+        singletons::hosts::update remove "${_ipaddr}" "${name}"
+    fi
 
     logging::warning "Stopping singleton ${singleton_name}"
 
@@ -274,10 +276,7 @@ singletons::instance::start() {
         mkdir -p "${profile_dir}"
     fi
 
-    {
-        chmod -R 770 "${profile_dir}"
-        chown -R 1000 "${profile_dir}"
-    } >/dev/null 3>&1
+    (chmod -R 770 "${profile_dir}"; chown -R 1000 "${profile_dir}") >/dev/null 2>&1
 
     extra_options[${#extra_options[@]}]="-e"
     extra_options[${#extra_options[@]}]="TZ=$(singletons::instance::get_timezone)"
