@@ -334,6 +334,7 @@ singletons::instance::start() {
 
     sudo docker run \
         -v "${HOME}:${HOME}" \
+        --env PS1="${name}> " \
         -v "${_hosts_file}:/etc/hosts" \
         --name "${singleton_name}" \
         -v "${profile_dir}:/home/$(singletons::instance::get_container_username)/Host" \
