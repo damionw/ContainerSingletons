@@ -153,7 +153,6 @@ singletons::instance::build() {
         --build-arg UID=$(id -u) \
         --build-arg GID=$(id -g) \
         --build-arg TZ=$(singletons::instance::get_timezone) \
-        --build-arg PS1=${name}> " \
         .
     then
         logging::error "Failed building container image ${image_name}"
@@ -334,7 +333,7 @@ singletons::instance::start() {
 
     sudo docker run \
         -v "${HOME}:${HOME}" \
-        --env PS1="${name}> " \
+        --env PS1="${singleton_name}> " \
         -v "${_hosts_file}:/etc/hosts" \
         --name "${singleton_name}" \
         -v "${profile_dir}:/home/$(singletons::instance::get_container_username)/Host" \
