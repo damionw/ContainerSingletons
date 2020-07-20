@@ -153,6 +153,7 @@ singletons::instance::build() {
         --build-arg UID=$(id -u) \
         --build-arg GID=$(id -g) \
         --build-arg TZ=$(singletons::instance::get_timezone) \
+        --build-arg PS1=${name}> " \
         .
     then
         logging::error "Failed building container image ${image_name}"
