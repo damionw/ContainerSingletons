@@ -315,7 +315,7 @@ singletons::instance::start() {
     local _ipaddr=
 
     {
-        echo "127.0.0.1 localhost ${name}"
+        echo "127.0.0.1 localhost"
 
         while read _hosts_instance
         do
@@ -347,6 +347,8 @@ singletons::instance::start() {
     local _ipaddr="$(singletons::instance::get_container_address "${name}")"
 
     singletons::hosts::update add "${_ipaddr}" "${name}"
+
+    echo "${_ipaddr} ${name}" >> "${_hosts_file}"
 
     return ${_result}
 }
