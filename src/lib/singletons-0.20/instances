@@ -148,7 +148,7 @@ singletons::instance::build() {
 
     singletons::instance::stop "${image_name}"
 
-    local _squash=# --squash=true
+    local _squash= # --squash=true
 
     if ! nice sudo docker build \
         --tag "${image_name}" \
