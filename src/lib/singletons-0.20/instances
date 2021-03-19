@@ -45,7 +45,7 @@ singletons::instance::get_image_from_instance() {
 }
 
 singletons::instance::get_container_instance() {
-    sudo docker ps --filter ancestor="${1:?Provide image name}" --format "{{.ID}}"
+    sudo -n docker ps --filter ancestor="${1:?Provide image name}" --format "{{.ID}}"
 }
 
 singletons::instance::get_container_address() {
@@ -66,12 +66,12 @@ singletons::instance::get_container_address() {
     then
         return 177
     else
-        sudo docker inspect --format '{{ .NetworkSettings.IPAddress }}' "${_container_id}"
+        sudo -n docker inspect --format '{{ .NetworkSettings.IPAddress }}' "${_container_id}"
     fi
 }
 
 singletons::instance::get_docker_image() {
-    sudo docker images --format "{{.Repository}}" | grep "^${1:?Provide image name}"'$'
+    sudo -n docker images --format "{{.Repository}}" | grep "^${1:?Provide image name}"'$'
 }
 
 singletons::instance::select_config() {
@@ -150,7 +150,7 @@ singletons::instance::build() {
 
     local _squash= # --squash=true
 
-    if ! nice sudo docker build \
+    if ! nice sudo -n docker build \
         --tag "${image_name}" \
         --build-arg UNAME=$(singletons::instance::get_container_username) \
         --build-arg UID=$(id -u) \
@@ -185,7 +185,7 @@ singletons::instance::delete() {
     if [ -n "${docker_image}" ]
     then
         logging::warning "Removing image ${docker_image}"
-        sudo docker rmi "${docker_image}"
+        sudo -n docker rmi "${docker_image}"
     fi
 }
 
@@ -225,8 +225,8 @@ singletons::instance::stop() {
 
     logging::warning "Stopping singleton ${singleton_name}"
 
-    sudo docker kill "${singleton_name}"
-    sudo docker rm "${singleton_name}"
+    sudo -n docker kill "${singleton_name}"
+    sudo -n docker rm "${singleton_name}"
 }
 
 singletons::instance::start() {
@@ -248,13 +248,13 @@ singletons::instance::start() {
 
     # Find the stopped container
     container_id="$(
-        sudo docker ps -a --filter ancestor="${image_name}" --format "{{.ID}}"
+        sudo -n docker ps -a --filter ancestor="${image_name}" --format "{{.ID}}"
     )"
 
     if [ -n "${container_id}" ]
     then
         logging::info "Restarting existing container ${container_id} for image ${image_name}"
-        sudo docker start "${container_id}"
+        sudo -n docker start "${container_id}"
         return $?
     fi
 
@@ -336,7 +336,7 @@ singletons::instance::start() {
 
     chmod 777 "${_hosts_file}"
 
-    sudo docker run \
+    sudo -E -n docker run \
         -v "${HOME}:${HOME}" \
         --env PS1="${singleton_name}> " \
         -v "${_hosts_file}:/etc/hosts" \
@@ -375,7 +375,7 @@ singletons::instance::attach() {
         return 255
     fi
 
-    exec sudo docker exec -it "${container_id}" bash
+    exec sudo -n docker exec -it "${container_id}" bash
 }
 
 singletons::instance::exec() {
@@ -397,5 +397,5 @@ singletons::instance::exec() {
         return 255
     fi
 
-    exec sudo docker exec -it "${container_id}" /bin/bash -c "${commands}"
+    exec sudo -n docker exec -it "${container_id}" /bin/bash -c "${commands}"
 }
