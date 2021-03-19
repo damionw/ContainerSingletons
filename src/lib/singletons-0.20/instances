@@ -311,6 +311,21 @@ singletons::instance::start() {
 
         while read _row
         do
+            if (echo "${_row}" | grep -q '^--env')
+            then
+                local _argname _varname _value
+
+                {
+                    read _argname; read _varname; read _value
+                }  <<< "$(echo "${_row}" | sed -e 's/--env[=\ ][ ]*/--env\n/1' -e 's/=/\n/1')"
+
+                if [ -n "${_varname}" -a -z "${_value}" ]
+                then
+                    _value="$(eval echo "\$${_varname}")"
+                    _row="--env=${_varname}=${_value}"
+                fi
+            fi
+
             extra_options[${#extra_options[@]}]="${_row}"
         done <<<"$(bash <<< "${script}")"
     fi
@@ -336,7 +351,7 @@ singletons::instance::start() {
 
     chmod 777 "${_hosts_file}"
 
-    sudo -E -n docker run \
+    sudo -n docker run \
         -v "${HOME}:${HOME}" \
         --env PS1="${singleton_name}> " \
         -v "${_hosts_file}:/etc/hosts" \
