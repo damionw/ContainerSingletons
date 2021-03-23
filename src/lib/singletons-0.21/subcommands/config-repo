@@ -137,7 +137,7 @@ do
 
             if is_git "${2}"
             then
-                if ! git clone "${2}" "${repo_path}"
+                if ! git clone --recurse-submodules "${2}" "${repo_path}"
                 then
                     logging::error "Cannot clone from GIT repo '${2}'"
                     exit 200

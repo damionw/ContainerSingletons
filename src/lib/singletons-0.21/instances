@@ -91,6 +91,7 @@ singletons::instance::select_config() {
         return $?
     elif [ -d .git ]
     then
+        git submodule init && git submodule update || true
         git fetch || true
         (git checkout "${name}" && (git pull >/dev/null 2>&1 || true)) >/dev/null
     else
